@@ -19,7 +19,7 @@ MODULE_VERSION("0.1");
 #define STATUS_BUFFER_SIZE 128
 static int cnt = 0;
 unsigned char text[100];
-
+unsigned char answer[100];
 struct chardev {
 	struct cdev cdev;
 	struct device* dev;
@@ -35,7 +35,26 @@ static struct chardev chardev;
 static ssize_t chardev_write( struct file *filp, const char *user_buf, size_t count, loff_t *f_pos ){
 	printk(KERN_INFO "WRITE FUNCTION CALLED!\n");
 	int status = 0;
-	return status;
+	char temp_buf[50];
+	cnt = 0;
+	
+	if (copy_from_user(temp_buf, user_buf, 6)){
+		printk(KERN_ALERT "chardev: Error copying data from userspace");
+		status = -EFAULT;
+		goto write_done;
+	}
+	if (temp_buf[0] == 'h' && temp_buf[1] == 'e' && temp_buf[2] == 'l' && temp_buf[3] == 'l' && temp_buf[4] == 'o'){
+		sprintf(answer,"Good day to you too!!! ;) \n");
+		printk(KERN_INFO "%s \n", answer);
+		status = 6;
+	}
+	else{
+		sprintf(answer,"Send 'hello' to see answer ;) \n");
+		printk(KERN_INFO "%s \n", answer);
+		status = count;
+	}
+	write_done:
+		return status;
 }
 
 static ssize_t chardev_read( struct file* filp, char *user_buf, size_t count, loff_t *f_pos )
