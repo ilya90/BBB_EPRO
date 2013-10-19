@@ -1,4 +1,4 @@
-obj-m += dulldev.o
+obj-y += dulldev.o
 
 CROSS = arm-linux-gnueabi-
 
@@ -11,3 +11,4 @@ all:
 	scp dulldev.ko root@192.168.7.2:/home/root
 clean:
 	make -C $(KDIR) M=$(PWD) CROSS_COMPILE=$(CROSS) clean
+

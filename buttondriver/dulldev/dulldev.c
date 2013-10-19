@@ -122,7 +122,7 @@ static ssize_t dulldev_write( struct file* F, const char *buf, size_t count, lof
 	else { 
 		//printk(KERN_WARNING "dulldev: Illegal command!\n");
 		//status = 1;
-		status = 4;
+		status = 1;
 	}
 
 	write_done:
@@ -201,9 +201,6 @@ static int init_dulldev(void)
 	
 	printk(KERN_INFO "dulldev: Successfully allocated device number Major: %d, Minor: %d\n",dulldev.major, dulldev.minor);
 
-	printk(KERN_INFO "This is the change for testing Git\n");
-	//adding a line of comment for testing 'git add' command again
-	
 	/* The kernel uses structures of type struct cdev to represent char devices internally. 	 
 	* Before the kernel invokes our device's operations, we must allocate and register one or 		 
 	* more of these structures. To do so, the code must include <linux/cdev.h>, where the 		 
