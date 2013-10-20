@@ -49,7 +49,7 @@ static ssize_t button1_read( struct file* filp, char *user_buf, size_t count, lo
 	printk(KERN_INFO "READ FUNCTION CALLED!\n");
 	int status =0;
 
-	int button_value = gpio_get_value(30);
+	int button_value = gpio_get_value(GPIO_NUMBER);
         printk(KERN_INFO "BUTTON VALUE = %d\n",button_value );
 	
 	if (button_value == 0)	sprintf(text,"Button is PRESSED\n");
