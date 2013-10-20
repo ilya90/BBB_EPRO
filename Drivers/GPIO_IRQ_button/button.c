@@ -9,6 +9,9 @@
 #include <linux/sysfs.h>
 #include <linux/proc_fs.h>
 #include <linux/gpio.h>
+#include <linux/irqreturn.h>
+#include <linux/interrupt.h>
+
 
 MODULE_AUTHOR("Ilja Fursov <ilfur12@student.sdu.dk");	
 MODULE_DESCRIPTION("Button GPIO device driver");
@@ -21,8 +24,10 @@ MODULE_VERSION("0.1");
 #define GPIO_BUTTON1_NUMBER 30
 #define GPIO_LED1_NUMBER 60
 
-static int cnt = 0;
+//static int cnt = 0;
 unsigned char text[100];
+
+int irq_num; //IRQ numbers are unsigned integer as GPIO numbers
 
 /*	echo 30 > /sys/class/gpio/export		*/
 /*	echo in > /sys/class/gpio/gpio30/direction	*/
@@ -50,7 +55,7 @@ static ssize_t button1_read( struct file* filp, char *user_buf, size_t count, lo
 {
 	printk(KERN_INFO "READ FUNCTION CALLED!\n");
 	int status =0;
-
+/*
 	int button_value = gpio_get_value(GPIO_BUTTON1_NUMBER);
         printk(KERN_INFO "BUTTON VALUE = %d\n",button_value );
 	
@@ -73,7 +78,7 @@ static ssize_t button1_read( struct file* filp, char *user_buf, size_t count, lo
         else {
                 status = 0;
                 cnt=0;        
-        }
+        }*/
 	
 	return status;
 }
@@ -100,6 +105,22 @@ static struct file_operations f_ops =
 	.write		= button1_write,
 	.release	= button1_close,
 };
+
+static irqreturn_t detect_irq(int irq, void *data)
+{
+	int status =0;
+	int button_value;
+
+	gpio_set_value(GPIO_LED1_NUMBER, 1);
+	printk(KERN_INFO "Button1 is PRESSED!\n");
+
+	while((button_value = gpio_get_value(GPIO_BUTTON1_NUMBER))== 0);	
+
+	gpio_set_value(GPIO_LED1_NUMBER, 0);
+	printk(KERN_INFO "Button1 is RELEASED!\n");
+
+	return 0;
+}
 
 static int button1_init(void){
 	printk(KERN_INFO "Initializing character device!\n");
@@ -161,9 +182,31 @@ static int button1_init(void){
 	gpio_direction_output(GPIO_LED1_NUMBER, 0);
 	gpio_export(GPIO_LED1_NUMBER, true);
 
+/*	IRQ creation*/
+	if((irq_num = gpio_to_irq(GPIO_BUTTON1_NUMBER)) < 0)
+	{
+		printk(KERN_ALERT "GPIO %d cannot be used as interrupt", GPIO_BUTTON1_NUMBER);
+                free_irq(irq_num, NULL);
+		return -1;
+		//goto fail;		
+	}
+	
+	if((request_irq(irq_num, detect_irq, IRQF_TRIGGER_FALLING, "Button1_state_change",NULL)) < 0)
+	{
+		printk(KERN_ALERT "IRQ request rejected");
+		free_irq(irq_num, NULL);
+		return -1;
+		//goto fail;	
+	}
+
+	
 	printk(KERN_INFO "button1: Successfully registered driver with kernel.\n");
 
 	return 0;
+
+/*fail: 
+	button1_exit();
+	return -1;*/
 }
 
 static void button1_exit(void){
@@ -174,6 +217,7 @@ static void button1_exit(void){
 	unregister_chrdev_region(button1.dev_t, 1);	
 	gpio_free(GPIO_BUTTON1_NUMBER);
 	gpio_free(GPIO_LED1_NUMBER);
+	free_irq(irq_num, NULL);
 
 	printk(KERN_WARNING "button1: Device unregistered\n");
 }
