@@ -149,7 +149,11 @@ static int button1_init(void){
 
 static void button1_exit(void){
 	printk(KERN_INFO "Removing character device!\n");
+	/* destroy device */
+	device_destroy(button1.class, button1.dev_t);
 
+	/* destroy the class */
+	class_destroy(button1.class);
 /*	When exit is called, clean up kernel data*/
 	cdev_del(&button1.cdev);
 	unregister_chrdev_region(button1.dev_t, 1);	

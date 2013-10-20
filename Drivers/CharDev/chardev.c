@@ -138,7 +138,7 @@ static int chardev_init(void){
 	class_destroy(chardev.class);
 	return -1;
 	}
-
+	
 
 
 	printk(KERN_INFO "chardev: Successfully registered driver with kernel.\n");
@@ -149,7 +149,12 @@ static int chardev_init(void){
 static void chardev_exit(void){
 	printk(KERN_INFO "Removing character device!\n");
 
-/*	When exit is called, clean up kernel data*/
+	/* destroy device */
+	device_destroy(chardev.class, chardev.dev_t);
+
+	/* destroy the class */
+	class_destroy(chardev.class);
+	/* When exit is called, clean up kernel data*/
 	cdev_del(&chardev.cdev);
 	unregister_chrdev_region(chardev.dev_t, 1);	
 
